@@ -1,0 +1,43 @@
+SentinelWatch
+Copyright (C) 2025-2026 The SentinelWatch Authors
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License, version 3, as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
+License (LICENSE) for more details.
+
+If you modify this software and run it as a network service, the AGPL-3.0
+requires you to make the modified source code available to the users of
+that service. See https://www.gnu.org/licenses/agpl-3.0.html for details.
+
+================================================================================
+Upstream attribution
+================================================================================
+
+SentinelWatch is a fork of:
+
+    Chasing-Your-Tail-NG (CYT-NG)
+    https://github.com/ArgeliusLabs/Chasing-Your-Tail-NG
+    Copyright (c) 2025 @matt0177
+    Licensed under the MIT License (see LICENSE-UPSTREAM-MIT)
+
+CYT-NG is itself an evolution of the original "Chasing Your Tail" Wi-Fi
+probe-request analysis tool by @matt0177. The MIT License from upstream
+is preserved verbatim in this repository as LICENSE-UPSTREAM-MIT and
+applies to the portions of code derived from upstream.
+
+This fork adds substantial new functionality (PDF intelligence reports,
+dashboard, multi-channel alerting, multi-location stalker detection,
+GUI rebuild, security hardening, etc.) under the AGPL-3.0. The combined
+work is distributed under the terms of the AGPL-3.0, which is compatible
+with the upstream MIT license.
+
+We are grateful to ArgeliusLabs and @matt0177 for the original work and
+for releasing it under a license that permits this kind of community
+contribution. If you use SentinelWatch and find the upstream's
+contributions useful, please consider starring or contributing back to
+https://github.com/ArgeliusLabs/Chasing-Your-Tail-NG as well.

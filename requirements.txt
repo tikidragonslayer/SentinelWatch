@@ -1,0 +1,21 @@
+# SentinelWatch — Python Dependencies
+requests>=2.28.0
+cryptography>=40.0.0
+
+# Web Dashboard
+flask>=3.0.0
+flask-cors>=4.0.0
+flask-limiter>=3.5.0
+
+# Terminal UI / Colors
+colorama>=0.4.6
+rich>=13.0.0
+
+# Resend.io email API
+resend>=2.0.0
+
+# Twilio SMS
+twilio>=9.0.0
+
+# System Stats (CPU/Memory/Temp)
+psutil>=5.9.0
