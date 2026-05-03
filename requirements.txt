@@ -19,3 +19,6 @@ twilio>=9.0.0
 
 # System Stats (CPU/Memory/Temp)
 psutil>=5.9.0
+
+# PDF export
+fpdf2>=2.7.0

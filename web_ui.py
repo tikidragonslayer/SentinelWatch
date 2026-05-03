@@ -12,6 +12,7 @@ import stat
 import secrets
 import platform
 import psutil
+import tempfile
 from fpdf import FPDF
 from datetime import datetime
 from functools import wraps
@@ -25,6 +26,7 @@ from tail_detector import TailDetector, get_recent_alerts
 # ──────────────────────────────────────────────
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 app = Flask(__name__)
+_REDACTED_SECRET = "********"
 
 # ── Auth configuration ─────────────────────────
 # Set CYT_SECRET_KEY env var for a stable key across restarts
@@ -149,6 +151,51 @@ def _clear_failed_attempts(ip: str):
     """Clear failed attempts on successful login."""
     with _login_lock:
         _login_attempts.pop(ip, None)
+
+
+def _load_config_file() -> dict:
+    with open(CONFIG_PATH) as f:
+        return json.load(f)
+
+
+def _write_config_file(cfg: dict) -> None:
+    directory = os.path.dirname(CONFIG_PATH)
+    fd, tmp_path = tempfile.mkstemp(prefix=".config.", suffix=".json", dir=directory)
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(cfg, f, indent=2)
+            f.write("\n")
+        os.chmod(tmp_path, stat.S_IRUSR | stat.S_IWUSR)
+        os.replace(tmp_path, CONFIG_PATH)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+
+def _redact_alert_secrets(alerts: dict) -> dict:
+    """Return notification config safe for browser display."""
+    safe = json.loads(json.dumps(alerts or {}))
+    if safe.get("resend", {}).get("api_key"):
+        safe["resend"]["api_key"] = _REDACTED_SECRET
+    if safe.get("twilio", {}).get("auth_token"):
+        safe["twilio"]["auth_token"] = _REDACTED_SECRET
+    return safe
+
+
+def _merge_channel_config(existing: dict, incoming: dict, secret_fields: set[str]) -> dict:
+    """Merge UI updates without erasing existing secrets with blanks/masks."""
+    merged = dict(existing or {})
+    for key, value in (incoming or {}).items():
+        if key in secret_fields:
+            if not isinstance(value, str):
+                continue
+            value = value.strip()
+            if not value or value == _REDACTED_SECRET:
+                continue
+            merged[key] = value
+        else:
+            merged[key] = value
+    return merged
 
 # Global detector instance
 detector = TailDetector(config_path=CONFIG_PATH)
@@ -413,26 +460,32 @@ def api_mode():
 @login_required
 def api_notifications_config():
     """Get or update notification settings (Resend / Twilio)."""
-    with open(CONFIG_PATH) as f:
-        cfg = json.load(f)
+    cfg = _load_config_file()
     if request.method == "POST":
         data = request.get_json(force=True)
         alerts = cfg.setdefault("alerts", {})
         if "resend" in data:
-            alerts["resend"].update(data["resend"])
+            alerts["resend"] = _merge_channel_config(
+                alerts.get("resend", {}),
+                data.get("resend", {}),
+                {"api_key"},
+            )
         if "twilio" in data:
-            alerts["twilio"].update(data["twilio"])
+            alerts["twilio"] = _merge_channel_config(
+                alerts.get("twilio", {}),
+                data.get("twilio", {}),
+                {"auth_token"},
+            )
         if "known_device_arrival_notify" in data:
-            alerts["known_device_arrival_notify"] = data["known_device_arrival_notify"]
+            alerts["known_device_arrival_notify"] = bool(data["known_device_arrival_notify"])
         if "unknown_ssid_linger_notify" in data:
-            alerts["unknown_ssid_linger_notify"] = data["unknown_ssid_linger_notify"]
-        with open(CONFIG_PATH, "w") as f:
-            json.dump(cfg, f, indent=2)
+            alerts["unknown_ssid_linger_notify"] = bool(data["unknown_ssid_linger_notify"])
+        _write_config_file(cfg)
         # Reload detector config
         detector.config = cfg
         detector.alert_cfg = cfg["alerts"]
         return jsonify({"ok": True})
-    return jsonify({"alerts": cfg.get("alerts", {})})
+    return jsonify({"alerts": _redact_alert_secrets(cfg.get("alerts", {}))})
 
 
 @app.route("/api/export/csv")
